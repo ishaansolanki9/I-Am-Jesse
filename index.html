@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tap To Rotate</title>
+  <style>
+    :root {
+      --bg-start: #fff3d9;
+      --bg-end: #f8c9a8;
+      --card: rgba(255, 255, 255, 0.7);
+      --text: #3b2416;
+      --shadow: rgba(86, 46, 21, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.85), transparent 35%),
+        linear-gradient(160deg, var(--bg-start), var(--bg-end));
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    button {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .stage {
+      width: min(92vw, 560px);
+      display: grid;
+      gap: 1rem;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .photo-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 22px 60px var(--shadow);
+      background: var(--card);
+      backdrop-filter: blur(6px);
+    }
+
+    .photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transform: scale(1.04);
+      transition: opacity 260ms ease, transform 260ms ease;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .photo.is-visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .caption {
+      margin: 0;
+      padding: 0.85rem 1rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 10px 30px rgba(86, 46, 21, 0.1);
+      font-size: clamp(0.95rem, 2.6vw, 1.1rem);
+      letter-spacing: 0.02em;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 0.95rem;
+      opacity: 0.78;
+    }
+
+    @media (max-width: 520px) {
+      .stage {
+        width: min(94vw, 420px);
+      }
+
+      .photo-frame {
+        border-radius: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" id="rotator" role="button" tabindex="0" aria-label="Show the next photo and play audio">
+    <div class="photo-frame">
+      <img class="photo is-visible" src="assets/photo-1.jpg" alt="Photo 1">
+      <img class="photo" src="assets/photo-2.jpg" alt="Photo 2">
+      <img class="photo" src="assets/photo-3.jpg" alt="Photo 3">
+    </div>
+    <p class="caption">Tap or click the photo.</p>
+    <p class="hint">Each tap loops Photo 1 to 2 to 3, then back to 1.</p>
+    <audio id="tap-audio" preload="auto" src="assets/tap-audio.mp3"></audio>
+  </main>
+
+  <script>
+    const rotator = document.getElementById("rotator");
+    const photos = Array.from(document.querySelectorAll(".photo"));
+    const audio = document.getElementById("tap-audio");
+    let currentIndex = 0;
+    const rotationOrder = [0, 1, 2];
+
+    function showPhoto(index) {
+      photos.forEach((photo, photoIndex) => {
+        photo.classList.toggle("is-visible", photoIndex === index);
+      });
+    }
+
+    function rotate() {
+      const currentStep = rotationOrder.indexOf(currentIndex);
+      const nextStep = (currentStep + 1) % rotationOrder.length;
+      currentIndex = rotationOrder[nextStep];
+      showPhoto(currentIndex);
+
+      audio.pause();
+      audio.currentTime = 0;
+
+      const playAttempt = audio.play();
+      if (playAttempt && typeof playAttempt.catch === "function") {
+        playAttempt.catch(() => {
+          // Browsers can still block playback if the media file is missing or invalid.
+        });
+      }
+    }
+
+    rotator.addEventListener("click", rotate);
+    rotator.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        rotate();
+      }
+    });
+  </script>
+</body>
+</html>
